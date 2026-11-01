@@ -21,8 +21,6 @@ This repository is the home of the public beta: how to set it up, and where to r
 11. [Troubleshooting](#troubleshooting)
 12. [Reporting a problem](#reporting-a-problem)
 
-Allow about 30 minutes, once.
-
 ---
 
 ## 1. What you need
@@ -34,32 +32,47 @@ Allow about 30 minutes, once.
 
 ## 2. Start the server
 
-The server is two containers: WhenWhere and its PostgreSQL database, described in [`whenwhere-stack.yaml`](whenwhere-stack.yaml).
+The server is two containers: WhenWhere and its PostgreSQL database, described in [`whenwhere-stack.yaml`](whenwhere-stack.yaml). It needs these settings:
 
-1. In Portainer, open **Stacks → Add stack → Web editor** and paste the contents of `whenwhere-stack.yaml`.
-2. Under **Environment variables**, add:
+| Name | Value |
+| --- | --- |
+| `WHENWHERE_IMAGE` | `ghcr.io/robiem-llc/whenwhere` |
+| `WHENWHERE_PUBLIC_URL` | The exact address you'll use in step 3, such as `https://family.example.com` |
+| `WHENWHERE_DB_PASSWORD` | A long random password. Never change it after the first start. |
+| `WHENWHERE_GOOGLE_MAPS_API_KEY` | Optional!! See [the section about creating one](#optional-google-maps-in-the-web-app). |
 
-   | Name | Value |
-   | --- | --- |
-   | `WHENWHERE_IMAGE` | `ghcr.io/robiem-llc/whenwhere` |
-   | `WHENWHERE_PUBLIC_URL` | The exact address you'll use in step 3, such as `https://family.example.com` |
-   | `WHENWHERE_DB_PASSWORD` | A long random password. Never change it after the first start. |
-   | `WHENWHERE_GOOGLE_MAPS_API_KEY` | Optional!! See [the section about creating one](#optional-google-maps-in-the-web-app). |
-
-3. Click **Deploy the stack**.
-
-The server listens on port `8186` with plain HTTP, so **don't forward that port on your router**; put your tunnel or reverse proxy in front of it (step 3).
+Then pick how you run it:
 
 <details>
-<summary>Using Docker Compose instead of Portainer</summary>
+<summary>Portainer</summary>
 
-Save `whenwhere-stack.yaml` as `compose.yaml` in a new folder, create a `.env` file beside it with the three variables above (one `NAME=value` per line), then run:
-
-```sh
-docker compose up -d
-```
+1. Open **Stacks → Add stack → Web editor** and paste the contents of `whenwhere-stack.yaml`.
+2. Under **Environment variables**, add the settings above.
+3. Click **Deploy the stack**.
 
 </details>
+
+<details>
+<summary>Docker Compose</summary>
+
+1. Save `whenwhere-stack.yaml` as `compose.yaml` in a new folder.
+2. Create a `.env` file beside it with the settings above, one `NAME=value` per line:
+
+   ```sh
+   WHENWHERE_IMAGE=ghcr.io/robiem-llc/whenwhere
+   WHENWHERE_PUBLIC_URL=https://family.example.com
+   WHENWHERE_DB_PASSWORD=a-long-random-password
+   ```
+
+3. Start it:
+
+   ```sh
+   docker compose up -d
+   ```
+
+</details>
+
+The server listens on port `8186` with plain HTTP, so **don't forward that port on your router**; put your tunnel or reverse proxy in front of it (step 3).
 
 ## 3. Give it a secure address
 
