@@ -19,7 +19,8 @@ This repository is the home of the public beta: how to set it up, and where to r
 9. [Keeping it running](#9-keeping-it-running)
 10. [Optional: Google Maps in the web app](#optional-google-maps-in-the-web-app)
 11. [Troubleshooting](#troubleshooting)
-12. [Reporting a problem](#reporting-a-problem)
+12. [Roadmap](#roadmap)
+13. [Reporting a problem](#reporting-a-problem)
 
 ---
 
@@ -193,6 +194,29 @@ On their phone, check that sharing is on, that location is allowed **Always**, a
 
 **A phone was lost or replaced.**
 In **Manage household**, revoke the old phone from that person's card, then register the new phone with a new emailed code.
+
+---
+
+## Roadmap
+
+**Top priority**
+
+- **Scour the code and release it.** Open source is the top priority.
+- **Find a new name and set licensing rules.** It's stupid, but it needs to be done.
+
+**Coming up**
+
+- **Accident detection:** refine it and make it live.
+- **Better "Left from" locations:** with the current battery settings, the app doesn't always detect where a trip actually started. I need to settle on inferring it, which saves battery, or getting it from the device at the expense of battery usage.
+- **Battery life:** always trying to improve battery usage. It's pretty solid right now. I accidentally left a setting in the iPhone app that I was using for testing (**Settings → GPS send window**, 5s to 30s). It's staying in for now if anyone wants to play with it, and it'll be removed once this is settled.
+
+**Wish list**
+
+- **Android Auto:** relatively high on my wish list, so I can know where I parked my car.
+- **Key fob finders** of some kind, per request.
+- **An Alexa app:** debating it, mostly for my own use. "Find my phone" mostly, but also "Is my daughter in her dorm yet, so I can sleep?"
+
+Got an idea or a vote for one of these? [Open an issue](../../issues/new/choose) or email dev@robiem.com.
 
 ---
 
