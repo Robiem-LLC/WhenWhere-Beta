@@ -19,8 +19,9 @@ This repository is the home of the public beta: how to set it up, and where to r
 7. [Invite your family](#7-invite-your-family)
 8. [Connect the phones](#8-connect-the-phones)
 9. [Keeping it running](#9-keeping-it-running)
-10. [Troubleshooting](#troubleshooting)
-11. [Reporting a problem](#reporting-a-problem)
+10. [Optional: Google Maps in the web app](#optional-google-maps-in-the-web-app)
+11. [Troubleshooting](#troubleshooting)
+12. [Reporting a problem](#reporting-a-problem)
 
 Allow about 30 minutes, once.
 
@@ -105,8 +106,8 @@ Locations are encrypted for specific devices, so your browser needs its own keys
 
 **Install the app**
 
-- **iPhone:** join the beta through TestFlight, Apple's beta app. The public TestFlight link will be posted here and on the website as soon as Apple approves the beta.
-- **Android:** download the latest APK from this repository's [Releases](../../releases) page, open it on the phone and allow the install when Android asks.
+- **iPhone:** [join the beta on TestFlight](https://testflight.apple.com/join/1MBkvkUK). Install Apple's TestFlight app if asked, then install WhenWhere from it.
+- **Android:** [download the APK](https://github.com/Robiem-LLC/WhenWhere-Beta/raw/main/android/WhenWhere-Android-beta.apk), open it on the phone and allow the install when Android asks. Build details and checksum are in [`android/`](android/README.md).
 
 **Sign in and register the phone**
 
@@ -123,6 +124,43 @@ That's it. Everyone who shares with you appears on your map, and trips start rec
 - **Updates:** in Portainer, open the stack, choose **Update the stack** and turn on **Re-pull image**. Your data stays in place.
 - **Backups:** back up the whole `/opt/docker/whenwhere` folder. The `server-data` folder holds the server's encryption key, which is needed to restore; back it up together with `database-data`.
 - **Never** change `WHENWHERE_DB_PASSWORD` after the first start, and never delete `server-data`.
+
+---
+
+## Optional: Google Maps in the web app
+
+The web app uses OpenStreetMap unless you give the server a Google Maps key. The iPhone and Android apps already include their own maps; this only changes the web app.
+
+**1. Create the key**
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project (or pick one) and turn on billing. Google charges only above its monthly free allowance; see [Google Maps pricing](https://developers.google.com/maps/billing-and-pricing/pricing).
+2. Under **APIs & Services → Library**, enable:
+   - **Maps JavaScript API**: the map itself.
+   - **Geocoding API**: address search when saving a place, and street names.
+   - **Maps Static API** (optional): map backgrounds on trip cards; without it they use OpenStreetMap.
+3. Under **APIs & Services → Credentials**, choose **Create credentials → API key**.
+
+**2. Restrict it**
+
+Edit the new key:
+
+- **Application restrictions:** choose **Websites** and add your address with `/*` on the end, for example `https://family.example.com/*`.
+- **API restrictions:** choose **Restrict key** and select the APIs you enabled above.
+
+Browsers can see this key, so these restrictions are what stop anyone else from using it. Setting a daily quota under **Quotas** adds a spending cap.
+
+**3. Give it to the server**
+
+1. In Portainer, open the stack and add the environment variable `WHENWHERE_GOOGLE_MAPS_API_KEY` with your key.
+2. Choose **Update the stack**. Your data and approved browsers are unaffected.
+3. Open the web app's **Household map** and choose **Load Google Maps**.
+
+To go back to OpenStreetMap, clear the variable and update the stack again.
+
+Good to know:
+
+- Google receives the area of the map you're viewing, as OpenStreetMap does. Your family's locations are still decrypted only in your browser and shown on top of the map.
+- With the key restricted to your website, the server's own street-name lookups for arrival alerts use OpenStreetMap instead. That's expected and needs no action.
 
 ---
 
