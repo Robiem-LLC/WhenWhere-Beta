@@ -2,9 +2,7 @@
 
 WhenWhere puts your family on one map, remembers every trip, and tells you when someone gets home. It runs on a server you own, and every location is encrypted on the phone before it leaves, and stays encrypted on your server. Nothing passes through us.
 
-This repository is the home of the public beta: how to set it up, and where to report problems. The app's source code is not published here.
-
-**Website:** https://whenwhere.robiem.com · **Privacy policy:** https://whenwhere.robiem.com/privacy.html
+This repository is the home of the public beta: how to set it up, and where to report problems. The app's source code is not published here.  It will be open source shortly. Just need to scour it to remove any keys, personal identifying info, and profanity laden comments.
 
 ---
 
@@ -29,9 +27,9 @@ Allow about 30 minutes, once.
 
 ## 1. What you need
 
-- **A computer that stays on, with Docker** and an Intel or AMD (x86-64) processor: a Linux box, a NAS such as Unraid, TrueNAS or an Intel-based Synology, or Windows with Docker Desktop. The server image isn't built for ARM boards such as the Raspberry Pi yet. [Portainer](https://www.portainer.io/) makes it point-and-click; plain Docker Compose works too.
-- **A domain on Cloudflare** (the free plan is fine) for a secure HTTPS address without opening ports on your router. Any other HTTPS reverse proxy also works.
-- **An email account that can send mail by SMTP**, such as your email provider's SMTP server with an app password. WhenWhere emails invitations and the codes that register each phone.
+- **Docker
+- **A domain to serve on is a must
+- **An email account that can send mail by SMTP**, WhenWhere emails invitations and the codes that register each phone.
 - **Phones:** iPhone with iOS 17 or later, or Android 8.0 or later.
 
 ## 2. Start the server
@@ -46,10 +44,7 @@ The server is two containers: WhenWhere and its PostgreSQL database, described i
    | `WHENWHERE_IMAGE` | `ghcr.io/robiem-llc/whenwhere` |
    | `WHENWHERE_PUBLIC_URL` | The exact address you'll use in step 3, such as `https://family.example.com` |
    | `WHENWHERE_DB_PASSWORD` | A long random password. Never change it after the first start. |
-
-3. Click **Deploy the stack**.
-
-Your data is kept in `/opt/docker/whenwhere` on that computer (set `WHENWHERE_DIR` to use another folder). The server listens on port `8186` with plain HTTP, so **don't forward that port on your router**; step 3 puts HTTPS in front of it.
+   | `WHENWHERE_GOOGLE_MAPS_API_KEY` | Optional!! See section about creating one. |
 
 <details>
 <summary>Using Docker Compose instead of Portainer</summary>
@@ -65,16 +60,20 @@ docker compose up -d
 ## 3. Give it a secure address
 
 The phone apps only connect over HTTPS. A Cloudflare Tunnel gives you that without opening any ports or revealing your home IP address.
-
-1. In the Cloudflare dashboard, open **Zero Trust → Networks → Tunnels** and create a tunnel. Cloudflare shows a command to install its connector; run it on the same computer (the Docker option works well in Portainer too).
-2. Add a **public hostname** to the tunnel, such as `family.example.com`. Set the service to **HTTP** and the URL to `localhost:8186`, or `<that computer's IP>:8186` if the connector runs in Docker.
-3. Make sure the hostname exactly matches `WHENWHERE_PUBLIC_URL`. If it doesn't, update the variable and redeploy the stack.
+Reverse porxi or cloudflare tunnel your heart out.  Tunnels are pretty idiot proof though
 
 ## 4. Create your household
 
 1. Open your address in a browser. You'll see **Make this server yours.**
 2. Find the one-time setup token: in Portainer, open the stack's **whenwhere** container and choose **Logs**. Look for the line `WHENWHERE FIRST-RUN SETUP TOKEN`.
-3. Enter the token, a household name, your email and a password of at least 15 characters. You become the household's administrator, and setup closes for good.
+   If you lose this token it can also be obtained byL
+   ```sh
+   python manage.py device-bootstrap-token
+   ```
+
+   With Docker Compose: `docker compose exec whenwhere python manage.py device-bootstrap-token`.
+4. Enter the token, a household name, your email and a password of at least 15 characters. You become the household's administrator, and setup closes for good.|
+5. That browser will become the only one able to decrypt the server.
 
 ## 5. Connect email
 
@@ -83,26 +82,12 @@ The phone apps only connect over HTTPS. A Cloudflare Tunnel gives you that witho
 
 Many providers require an app password rather than your normal password for SMTP. The server stores these settings encrypted.
 
-## 6. Trust your browser
-
-Locations are encrypted for specific devices, so your browser needs its own keys before it can show the map.
-
-1. On **Approve your first device.**, the page asks for a device bootstrap token.
-2. In Portainer, open the **whenwhere** container, choose **Console**, connect with `/bin/sh` and run:
-
-   ```sh
-   python manage.py device-bootstrap-token
-   ```
-
-   With Docker Compose: `docker compose exec whenwhere python manage.py device-bootstrap-token`.
-3. Paste the token and choose **Trust this first device**. Use a browser that only you use.
-
-## 7. Invite your family
+## 6. Invite your family
 
 1. Open **Manage household** and enter each person's email address to invite them.
 2. They get an email to choose a username and password. They can also finish this in the app with **Set up invited account**.
 
-## 8. Connect the phones
+## 7. Connect the phones
 
 **Install the app**
 
@@ -118,12 +103,6 @@ Locations are encrypted for specific devices, so your browser needs its own keys
 5. Under **Who can see this phone?**, pick who in the household sees your location.
 
 That's it. Everyone who shares with you appears on your map, and trips start recording automatically.
-
-## 9. Keeping it running
-
-- **Updates:** in Portainer, open the stack, choose **Update the stack** and turn on **Re-pull image**. Your data stays in place.
-- **Backups:** back up the whole `/opt/docker/whenwhere` folder. The `server-data` folder holds the server's encryption key, which is needed to restore; back it up together with `database-data`.
-- **Never** change `WHENWHERE_DB_PASSWORD` after the first start, and never delete `server-data`.
 
 ---
 
@@ -152,25 +131,17 @@ Browsers can see this key, so these restrictions are what stop anyone else from 
 **3. Give it to the server**
 
 1. In Portainer, open the stack and add the environment variable `WHENWHERE_GOOGLE_MAPS_API_KEY` with your key.
-2. Choose **Update the stack**. Your data and approved browsers are unaffected.
+2. Update your container
 3. Open the web app's **Household map** and choose **Load Google Maps**.
 
 To go back to OpenStreetMap, clear the variable and update the stack again.
-
-Good to know:
-
-- Google receives the area of the map you're viewing, as OpenStreetMap does. Your family's locations are still decrypted only in your browser and shown on top of the map.
-- With the key restricted to your website, the server's own street-name lookups for arrival alerts use OpenStreetMap instead. That's expected and needs no action.
 
 ---
 
 ## Troubleshooting
 
-**The app says "Enter your household's HTTPS server address without a path."**
-Enter just the address, starting with `https://` and without anything after the domain, for example `https://family.example.com`.
-
 **The app says the server address could not be found.**
-Check the address for typos, then open it in the phone's browser. If the browser can't reach it either, check the tunnel's public hostname in Cloudflare and that the stack is running.
+Check the address for typos, then open it in the phone's browser. If the browser can't reach it either, check your chosen path out.
 
 **The browser shows an error about the host or origin.**
 `WHENWHERE_PUBLIC_URL` must match the address in the browser exactly, including `https://` and without a trailing slash.
@@ -189,9 +160,14 @@ In **Manage household**, revoke the old phone from that person's card, then regi
 ## Reporting a problem
 
 [Open an issue](../../issues/new/choose) in this repository and include the app version (shown in Settings), your phone model and OS version, and what you did and what you expected.
+Feel free to make improvement suggestions!!
 
 **Please don't post** your server address, email addresses, tokens, passwords or screenshots that show real locations. If something involves private details, email dev@robiem.com instead.
+
+Or always feel free to hit my up at dev@robiem.com or where we first linked up. (Reddit for most, Cell for the rest.)
 
 ---
 
 WhenWhere by Robiem.
+
+Side note.  WhenWhere is currently trademarked by someone else.  So the first name I found that I liked is not going to stay. I will let anyone know what the final name is, and am open to suggestions!
