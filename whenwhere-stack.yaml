@@ -1,0 +1,47 @@
+# WhenWhere: minimal Portainer / Docker Compose stack.
+# Put HTTPS in front of it yourself (Cloudflare Tunnel, reverse proxy, ...).
+# Set the variables in Portainer's "Environment variables" (or a private
+# .env), never in this file. Anything marked #optional has a default.
+
+services:
+  whenwhere:
+    image: ${WHENWHERE_IMAGE:?Set WHENWHERE_IMAGE to the published server image, e.g. ghcr.io/OWNER/whenwhere}:${WHENWHERE_TAG:-latest}     #required WHENWHERE_IMAGE; optional tag: latest | dev
+    restart: unless-stopped
+    init: true
+    environment:
+      WHENWHERE_PUBLIC_URL: ${WHENWHERE_PUBLIC_URL:?exact HTTPS address, e.g. https://whenwhere.example.com}
+      DATABASE_URL: postgresql+psycopg://whenwhere:${WHENWHERE_DB_PASSWORD:?long random password}@database:5432/whenwhere
+      WHENWHERE_GOOGLE_MAPS_API_KEY: ${WHENWHERE_GOOGLE_MAPS_API_KEY:-}              #optional: your own browser key; blank = OpenStreetMap
+      WHENWHERE_PUSH_RELAY_URL: ${WHENWHERE_PUSH_RELAY_URL:-}                        #optional: blank = official image's built-in iPhone relay address
+      WHENWHERE_PUSH_RELAY_TOKEN: ${WHENWHERE_PUSH_RELAY_TOKEN:-}                    #optional: blank = register with the relay automatically
+      WHENWHERE_FCM_RELAY_URL: ${WHENWHERE_FCM_RELAY_URL:-}                          #optional: blank = official image's built-in Android relay address
+      WHENWHERE_FCM_RELAY_TOKEN: ${WHENWHERE_FCM_RELAY_TOKEN:-}                      #optional: blank = register with the relay automatically
+    volumes:
+      - ${WHENWHERE_DIR:-/opt/docker/whenwhere}/server-data:/data                    #optional base folder: keys, keep private
+      - ${WHENWHERE_DIR:-/opt/docker/whenwhere}/exports:/exports                     # readable redacted reports, safe to share
+    ports:
+      - "${WHENWHERE_PORT:-8186}:8080"                                             #optional: plain HTTP, only for your proxy/tunnel
+    depends_on:
+      database:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+
+  database:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whenwhere
+      POSTGRES_DB: whenwhere
+      POSTGRES_PASSWORD: ${WHENWHERE_DB_PASSWORD:?long random password}
+    volumes:
+      - ${WHENWHERE_DIR:-/opt/docker/whenwhere}/database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U whenwhere -d whenwhere"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
